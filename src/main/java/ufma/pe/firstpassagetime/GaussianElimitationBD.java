@@ -13,6 +13,7 @@
 package ufma.pe.firstpassagetime;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 /**
  *
@@ -45,7 +46,7 @@ public class GaussianElimitationBD {
 
             // pivot within A and b
             for (int i = p + 1; i < N; i++) {
-                BigDecimal alpha = A[i][p].divide(A[p][p]);
+                BigDecimal alpha = A[i][p].divide(A[p][p], 8, RoundingMode.HALF_UP);
                 b[i] = b[i].subtract(alpha.multiply(b[p]));
                 for (int j = p; j < N; j++) {
                     A[i][j] = A[i][j].subtract(alpha.multiply(A[p][j]));
@@ -60,7 +61,7 @@ public class GaussianElimitationBD {
             for (int j = i + 1; j < N; j++) {
                 sum = sum.add(A[i][j].multiply(x[j]));
             }
-            x[i] = b[i].subtract(sum).divide(A[i][i]);
+            x[i] = (b[i].subtract(sum)).divide(A[i][i], 8, RoundingMode.HALF_UP);
         }
         return x;
     }    

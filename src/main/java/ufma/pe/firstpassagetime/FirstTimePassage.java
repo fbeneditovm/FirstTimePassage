@@ -6,6 +6,7 @@
 package ufma.pe.firstpassagetime;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 /**
  *
@@ -48,12 +49,97 @@ public class FirstTimePassage {
     }
     
     /**
-     * Calculates a Mean First Time Passage u
+     * Calculates the Stead State Probabilities
+     * @return an array with the Stead State Probabilities
+     */
+    public BigDecimal[] steadStateProb(){
+        
+        int size = tMatrix.length;
+        
+        //A is the equations' tMatrix of coeficients
+        BigDecimal[][] matrixA = new BigDecimal[size][size];
+        
+        //The equations' vector of coeficients
+        BigDecimal[] vectorB = new BigDecimal[size];
+        
+        /**
+         * The next two loops construct the equations
+         */
+        for(int l=0; l<(size); l++){
+            //The independent term is aways 0 based on the formula
+            vectorB[l]= new BigDecimal("0");
+            
+            for(int k=0; k<(size); k++){
+                //atribution of the coeficients based on the formula
+                /*
+                matrixA[l][k] = (l==k)
+                        ? tMatrix[k][l].subtract(new BigDecimal("1.0"))
+                        : tMatrix[k][l];
+                */
+                if(l==k)
+                    matrixA[l][k] = tMatrix[k][l].subtract(new BigDecimal("1.0"));
+                else
+                    matrixA[l][k] = tMatrix[k][l];
+            }
+        }
+        BigDecimal[] incognito = GaussianElimitationBD.lsolve(matrixA, vectorB);
+        
+        return incognito;
+    }
+    
+     /**
+     * Calculates a particular Stead State Probability
+     * @return  the Stead State Probability
+     */
+    public BigDecimal steadStateProb(int state){
+        
+        int size = tMatrix.length;
+        
+        //A is the equations' tMatrix of coeficients
+        BigDecimal[][] matrixA = new BigDecimal[size][size];
+        
+        //The equations' vector of coeficients
+        BigDecimal[] vectorB = new BigDecimal[size];
+        
+        /**
+         * The next two loops construct the equations
+         */
+        for(int l=0; l<(size); l++){
+            //The independent term is aways 0 based on the formula
+            vectorB[l]= new BigDecimal("0");
+            
+            for(int k=0; k<(size); k++){
+                //atribution of the coeficients based on the formula
+                /*
+                matrixA[l][k] = (l==k)
+                        ? tMatrix[k][l].subtract(new BigDecimal("1.0"))
+                        : tMatrix[k][l];
+                */
+                if(l==k)
+                    matrixA[l][k] = tMatrix[k][l].subtract(new BigDecimal("1.0"));
+                else
+                    matrixA[l][k] = tMatrix[k][l];
+            }
+        }
+        BigDecimal[] incognito = GaussianElimitationBD.lsolve(matrixA, vectorB);
+        
+        return incognito[state];
+    }
+    
+    /**
+     * Calculates a Mean First Time Passage Uij
      * @param i the initial state
      * @param j the desired state
      * @return u
      */
     public BigDecimal meanFirstTimePassage(int i, int j){
+        
+        BigDecimal result = new BigDecimal("1.0");
+        if(i==j){
+            result = result.divide(steadStateProb(j), 8, RoundingMode.HALF_UP);
+            return result;
+        }
+        
         int size = (tMatrix.length-1);
         //A is the equations' tMatrix of coeficients
         BigDecimal[][] matrixA = new BigDecimal[size][size];
@@ -87,8 +173,16 @@ public class FirstTimePassage {
                     matrixA[x][y] = tMatrix[l][k];
             }
         }
-        BigDecimal[] values = GaussianElimitationBD.lsolve(matrixA, vectorB);
+        BigDecimal[] incognito = GaussianElimitationBD.lsolve(matrixA, vectorB);
+        /*
+         * incognito contains the values of all Ukj.
+         * Since the k skips j,
+         * the desired Mean First Time Passage Uij
+         * is the incognito[i] if i<j or
+         * incognito[i-1] if i>j
+         */
+        result = (i<j) ? incognito[i] : incognito[i-1];
         
-        return (i<j) ? values[i] : values [i-1];
+        return result;
     }
 }
